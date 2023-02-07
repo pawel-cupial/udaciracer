@@ -74,12 +74,13 @@ async function delay(ms) {
 
 // This async function controls the flow of the race, add the logic and error handling
 async function handleCreateRace() {
-	// render starting UI
-	renderAt('#race', renderRaceStartView())
 
 	// TODO - Get player_id and track_id from the store
+	const trackId = store.track_id
+	const playerId = store.player_id
 	
 	// const race = TODO - invoke the API call to create the race, then save the result
+	const race = getRace(trackId)
 
 	// TODO - update the store with the race id
 	// For the API to work properly, the race id should be race id - 1
@@ -90,6 +91,9 @@ async function handleCreateRace() {
 	// TODO - call the async function startRace
 
 	// TODO - call the async function runRace
+
+	// render starting UI
+	renderAt('#race', renderRaceStartView(race))
 }
 
 function runRace(raceID) {
@@ -145,7 +149,8 @@ function handleSelectPodRacer(target) {
 	// add class selected to current target
 	target.classList.add('selected')
 
-	// TODO - save the selected racer to the store
+	//save the selected racer to the store
+	store.player_id = target.id
 }
 
 function handleSelectTrack(target) {
@@ -160,7 +165,8 @@ function handleSelectTrack(target) {
 	// add class selected to current target
 	target.classList.add('selected')
 
-	// TODO - save the selected track id to the store
+	// save the selected track id to the store
+	store.track_id = target.id
 	
 }
 
@@ -321,11 +327,16 @@ function defaultFetchOpts() {
 // TODO - Make a fetch call (with error handling!) to each of the following API endpoints 
 
 function getTracks() {
-	// GET request to `${SERVER}/api/tracks`
+	
+	return fetch(`${SERVER}/api/tracks`, defaultFetchOpts())
+	.then(res => res.json())
+	.catch(err => console.log("Problem with getting tracks!", err))
 }
 
 function getRacers() {
-	// GET request to `${SERVER}/api/cars`
+	return fetch(`${SERVER}/api/cars`, defaultFetchOpts())
+	.then(res => res.json())
+	.catch(err => console.log("Problem with getting racers!", err))
 }
 
 function createRace(player_id, track_id) {
@@ -344,7 +355,9 @@ function createRace(player_id, track_id) {
 }
 
 function getRace(id) {
-	// GET request to `${SERVER}/api/races/${id}`
+	return fetch(`${SERVER}/api/races/${id}`, defaultFetchOpts())
+	.then(res => res.json())
+	.catch(err => console.log("Problem with getting races!", err))
 }
 
 function startRace(id) {
