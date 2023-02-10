@@ -75,25 +75,28 @@ async function delay(ms) {
 // This async function controls the flow of the race, add the logic and error handling
 async function handleCreateRace() {
 
-	// TODO - Get player_id and track_id from the store
+	// Get player_id and track_id from the store
 	const trackId = store.track_id
 	const playerId = store.player_id
 	
-	// const race = TODO - invoke the API call to create the race, then save the result
-	const race = getRace(trackId)
-
-	// TODO - update the store with the race id
-	// For the API to work properly, the race id should be race id - 1
-	
-	// The race has been created, now start the countdown
-	// TODO - call the async function runCountdown
-
-	// TODO - call the async function startRace
-
-	// TODO - call the async function runRace
-
+	// const race = invoke the API call to create the race, then save the result
+	const race = await createRace(trackId, playerId)
 	// render starting UI
-	renderAt('#race', renderRaceStartView(race))
+	renderAt('#race', renderRaceStartView(race.Track))
+
+	// update the store with the race id	
+	// For the API to work properly, the race id should be race id - 1
+	store.race_id = parseInt(race.ID) - 1
+
+	// The race has been created, now start the countdown
+	// call the async function runCountdown
+	await runCountdown();
+
+	// call the async function startRace
+	await startRace(store.race_id);
+	
+	// call the async function runRace
+	await runRace(store.race_id);
 }
 
 function runRace(raceID) {
@@ -124,16 +127,20 @@ async function runCountdown() {
 		let timer = 3
 
 		return new Promise(resolve => {
-			// TODO - use Javascript's built in setInterval method to count down once per second
-
-			// run this DOM manipulation to decrement the countdown for the user
-			document.getElementById('big-numbers').innerHTML = --timer
-
-			// TODO - if the countdown is done, clear the interval, resolve the promise, and return
-
+			// use Javascript's built in setInterval method to count down once per second
+			const countdown = setInterval(() => {
+				if (timer !== 0) {
+				   // run this DOM manipulation to decrement the countdown for the user
+				   document.getElementById('big-numbers').innerHTML = --timer
+				} else {
+				   // if the countdown is done, clear the interval, resolve the promise, and return
+				   clearInterval(countdown);
+				   resolve();
+				}
+			}, 1000);	
 		})
-	} catch(error) {
-		console.log(error);
+	} catch(err) {
+		console.log(err);
 	}
 }
 
@@ -324,7 +331,7 @@ function defaultFetchOpts() {
 	}
 }
 
-// TODO - Make a fetch call (with error handling!) to each of the following API endpoints 
+// Make a fetch call (with error handling!) to each of the following API endpoints 
 
 function getTracks() {
 	
@@ -360,13 +367,17 @@ function getRace(id) {
 	.catch(err => console.log("Problem with getting races!", err))
 }
 
-function startRace(id) {
-	return fetch(`${SERVER}/api/races/${id}/start`, {
-		method: 'POST',
-		...defaultFetchOpts(),
-	})
-	.then(res => res.json())
-	.catch(err => console.log("Problem with getRace request::", err))
+async function startRace(id) {
+	try {
+		const data = await fetch(`${SERVER}/api/races/${id}/start`, {
+			method: `POST`,
+			dataType: 'jsonp',
+			...defaultFetchOpts(),
+		});
+		return data;
+	} catch (err){
+		console.log("Problem with startRace request::", err);
+	}
 }
 
 function accelerate(id) {
