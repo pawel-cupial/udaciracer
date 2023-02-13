@@ -101,23 +101,23 @@ async function handleCreateRace() {
 
 function runRace(raceID) {
 	return new Promise(resolve => {
-	// TODO - use Javascript's built in setInterval method to get race info every 500ms
-
-	/* 
-		TODO - if the race info status property is "in-progress", update the leaderboard by calling:
-
-		renderAt('#leaderBoard', raceProgress(res.positions))
-	*/
-
-	/* 
-		TODO - if the race info status property is "finished", run the following:
-
-		clearInterval(raceInterval) // to stop the interval from repeating
-		renderAt('#race', resultsView(res.positions)) // to render the results view
-		reslove(res) // resolve the promise
-	*/
+	// use Javascript's built in setInterval method to get race info every 500ms
+	const racerInterval = setInterval(async ()=> {
+			const data = await getRace(raceID).catch((error) =>
+				console.log("getRace error ", error) 
+			);
+			// if the race info status property is "in-progress", update the leaderboard
+			if(data.status == 'in-progress') {
+				renderAt('#leaderBoard', raceProgress(data.positions))
+			// if the race info status property is "finished"
+			} else if(data.status == 'finished') {
+				clearInterval(racerInterval) // to stop the interval from repeating
+				renderAt('#race', resultsView(data.positions)) 
+				resolve(data);
+			}
+		},500)
 	})
-	// remember to add error handling for the Promise
+	.catch(err => console.log(err))
 }
 
 async function runCountdown() {
@@ -178,8 +178,8 @@ function handleSelectTrack(target) {
 }
 
 function handleAccelerate() {
-	console.log("accelerate button clicked")
-	// TODO - Invoke the API call to accelerate
+	// Invoke the API call to accelerate
+	accelerate(store.race_id)
 }
 
 // HTML VIEWS ------------------------------------------------
@@ -282,9 +282,9 @@ function resultsView(positions) {
 }
 
 function raceProgress(positions) {
-	let userPlayer = positions.find(e => e.id === store.player_id)
+	let userPlayer = positions.find(e => e.id == store.player_id)
 	userPlayer.driver_name += " (you)"
-
+console.log(userPlayer)
 	positions = positions.sort((a, b) => (a.segment > b.segment) ? -1 : 1)
 	let count = 1
 
@@ -382,6 +382,8 @@ async function startRace(id) {
 
 function accelerate(id) {
 	// POST request to `${SERVER}/api/races/${id}/accelerate`
-	// options parameter provided as defaultFetchOpts
-	// no body or datatype needed for this request
+	return fetch(`${SERVER}/api/races/${id}/accelerate`, {
+		method: 'POST',
+		...defaultFetchOpts()
+	})
 }
